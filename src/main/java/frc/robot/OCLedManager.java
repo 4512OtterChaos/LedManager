@@ -7,8 +7,52 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+
 /**
- * Add your docs here.
+ * Manager class for LEDs, providing different patterns to use in a AddressableLEDBuffer.
  */
 public class OCLedManager {
+    
+    public enum States {
+        Idle(OCLedManager::idle),
+        Shooting(OCLedManager::shooting); // etc
+
+        private Runnable pattern;// This just points to the function that creates a certain effect
+        States(Runnable pattern){
+            this.pattern = pattern;
+        }
+
+        public Runnable getPattern(){
+            return pattern;
+        }
+    }
+
+    private static States currState = States.Idle;
+    private static AddressableLEDBuffer buffer;
+
+    public OCLedManager(AddressableLEDBuffer buff){
+        buffer = buff;  
+    }
+
+    public static States getState(){
+        return currState;
+    }
+    public static void setState(States state){
+        currState = state;
+    }
+
+    public static void periodic(){
+        currState.getPattern().run(); // this just calls the current function
+    }
+
+    // these functions modify the buffer to create patterns
+    private static void idle(){
+        for(int i=0;i<buffer.getLength();i++){
+            buffer.setHSV(i, 0, 0, 0);
+        }
+    }
+    private static void shooting(){
+
+    }
 }
