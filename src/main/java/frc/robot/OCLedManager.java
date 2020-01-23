@@ -31,8 +31,8 @@ public class OCLedManager {
     private static States currState = States.Idle;
     private static AddressableLEDBuffer buffer;
 
-    public OCLedManager(AddressableLEDBuffer buff){
-        buffer = buff;  
+    public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
+        buffer = buff;
     }
 
     public static States getState(){
@@ -43,16 +43,18 @@ public class OCLedManager {
     }
 
     public static void periodic(){
-        currState.getPattern().run(); // this just calls the current function
+        if(buffer != null) currState.getPattern().run(); // this just calls the current function
     }
 
     // these functions modify the buffer to create patterns
     private static void idle(){
         for(int i=0;i<buffer.getLength();i++){
-            buffer.setHSV(i, 0, 0, 0);
+            buffer.setHSV(i, 10, 200, 150);
         }
     }
     private static void shooting(){
-
+        for(int i=0;i<buffer.getLength();i++){
+            buffer.setHSV(i, 100, 200, 150);
+        }
     }
 }

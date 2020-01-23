@@ -7,7 +7,12 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.OCLedManager.States;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -17,12 +22,30 @@ import edu.wpi.first.wpilibj.TimedRobot;
  * project.
  */
 public class Robot extends TimedRobot {
-  /**
-   * This function is run when the robot is first started up and should be used
-   * for any initialization code.
-   */
+
+  AddressableLED led = new AddressableLED(9);
+  AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(149);
+  SendableChooser<States> stateChooser = new SendableChooser<>();
+
   @Override
   public void robotInit() {
+    led.setLength(ledBuffer.getLength());
+    led.start();
+
+    OCLedManager.setBuffer(ledBuffer);
+
+    stateChooser.setDefaultOption(States.Idle.toString(), States.Idle);
+    for(States state:OCLedManager.States.values()){
+      stateChooser.addOption(state.toString(), state);
+    }
+    SmartDashboard.putData(stateChooser);
+  }
+
+  @Override
+  public void robotPeriodic() {
+    OCLedManager.setState(stateChooser.getSelected());
+    OCLedManager.periodic();
+    led.setData(ledBuffer);
   }
 
   @Override
