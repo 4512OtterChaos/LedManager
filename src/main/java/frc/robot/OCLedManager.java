@@ -8,6 +8,10 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Units;
+import edu.wpi.first.wpiutil.math.MathUtil;
 
 /**
  * Manager class for LEDs, providing different patterns to use in a AddressableLEDBuffer.
@@ -16,8 +20,9 @@ public class OCLedManager {
     
     public enum States {
         Idle(OCLedManager::idle),
-        Shooting(OCLedManager::shooting); // etc
-
+        Shooting(OCLedManager::shooting),
+        Wave(OCLedManager::wave);
+        // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
         States(Runnable pattern){
             this.pattern = pattern;
@@ -30,6 +35,8 @@ public class OCLedManager {
 
     private static States currState = States.Idle;
     private static AddressableLEDBuffer buffer;
+
+    private static double hue = 0;
 
     public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
         buffer = buff;
@@ -46,6 +53,12 @@ public class OCLedManager {
         if(buffer != null) currState.getPattern().run(); // this just calls the current function
     }
 
+    private static int[] rgbWave(int hue, int sat, int val){
+        sat = 255-sat;
+        int[] rgb = {sat + val*(hue)};
+        return rgb;
+    }
+
     // these functions modify the buffer to create patterns
     private static void idle(){
         for(int i=0;i<buffer.getLength();i++){
@@ -56,5 +69,18 @@ public class OCLedManager {
         for(int i=0;i<buffer.getLength();i++){
             buffer.setHSV(i, 100, 200, 150);
         }
+    }
+    private static void wave(){
+        final int hueRange = 45;
+        final int hueInitial = 100;
+        for(var i=0;i<buffer.getLength();i++){
+            //final var currHue = ((int)hue + (i*hueRange / buffer.getLength())) % hueRange; 
+            final int currrHue = (int)(((Math.sin(hue/180*Math.PI)+1) * (hueRange/2.0) + (i*hueRange/buffer.getLength())) % hueRange);
+            SmartDashboard.putNumber("hue", currrHue+hueInitial);
+            buffer.setHSV(i, currrHue+hueInitial, 255, 160);
+        }
+        hue = Timer.getFPGATimestamp()*80;
+
+        hue %= 360;
     }
 }
