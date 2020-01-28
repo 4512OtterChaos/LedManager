@@ -21,7 +21,8 @@ public class OCLedManager {
     public enum States {
         Idle(OCLedManager::idle),
         Shooting(OCLedManager::shooting),
-        Wave(OCLedManager::wave);
+        Wave(OCLedManager::wave),
+        Shock(OCLedManager::shock);
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
         States(Runnable pattern){
@@ -36,7 +37,7 @@ public class OCLedManager {
     private static States currState = States.Idle;
     private static AddressableLEDBuffer buffer;
 
-    private static double hue = 0;
+    private static int hue = 0;
 
     public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
         buffer = buff;
@@ -51,12 +52,6 @@ public class OCLedManager {
 
     public static void periodic(){
         if(buffer != null) currState.getPattern().run(); // this just calls the current function
-    }
-
-    private static int[] rgbWave(int hue, int sat, int val){
-        sat = 255-sat;
-        int[] rgb = {sat + val*(hue)};
-        return rgb;
     }
 
     // these functions modify the buffer to create patterns
@@ -79,8 +74,23 @@ public class OCLedManager {
             SmartDashboard.putNumber("hue", currrHue+hueInitial);
             buffer.setHSV(i, currrHue+hueInitial, 255, 160);
         }
-        hue = Timer.getFPGATimestamp()*80;
+        hue = (int)(Timer.getFPGATimestamp()*80);
 
         hue %= 360;
+    }
+    private static void shock(){
+        int hueRange = 45;
+        int hueInitial = 100;
+        for (var i = 0; i < buffer.getLength(); i++) {
+            // Calculate the hue - hue is easier for rainbows because the color
+            // shape is a circle so only one value needs to precess
+            final int currHue = (int)(((Math.sin(hue/180*Math.PI)+1) * (hueRange/2.0) + (i*hueRange/buffer.getLength())) % hueRange);
+            // Set the value
+            buffer.setHSV(i, currHue, 200, 128);
+          }
+          // Increase by to make the rainbow "move"
+          hue += 3;
+          // Check bounds
+          hue %= 180; 
     }
 }
