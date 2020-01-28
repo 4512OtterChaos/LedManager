@@ -47,7 +47,7 @@ public class OCLedManager {
         return currState;
     }
     public static void setState(States state){
-        currState = state;
+        if(!state.equals(currState)) currState=state;
     }
 
     public static void periodic(){
@@ -84,12 +84,11 @@ public class OCLedManager {
         for (var i = 0; i < buffer.getLength(); i++) {
             // Calculate the hue - hue is easier for rainbows because the color
             // shape is a circle so only one value needs to precess
-            final int currHue = (int)(((Math.sin(hue/180*Math.PI)+1) * (hueRange/2.0) + (i*hueRange/buffer.getLength())) % hueRange);
             // Set the value
-            buffer.setHSV(i, currHue, 200, 128);
+            buffer.setHSV(i, 50, 200, 160);
           }
           // Increase by to make the rainbow "move"
-          hue += 3;
+          hue = (int)(Timer.getFPGATimestamp()*80);
           // Check bounds
           hue %= 180; 
     }

@@ -24,7 +24,7 @@ import frc.robot.OCLedManager.States;
 public class Robot extends TimedRobot {
 
   AddressableLED led = new AddressableLED(1);
-  AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(60);
+  AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(119);
   SendableChooser<States> stateChooser = new SendableChooser<>();
 
   @Override
