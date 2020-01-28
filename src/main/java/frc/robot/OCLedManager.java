@@ -37,7 +37,7 @@ public class OCLedManager {
     private static States currState = States.Idle;
     private static AddressableLEDBuffer buffer;
 
-    private static int hue = 0;
+    private static double hue = 0;
 
     public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
         buffer = buff;
@@ -86,10 +86,10 @@ public class OCLedManager {
             // shape is a circle so only one value needs to precess
             // Set the value
             buffer.setHSV(i, 50, 200, 160);
-          }
-          // Increase by to make the rainbow "move"
-          hue = (int)(Timer.getFPGATimestamp()*80);
-          // Check bounds
-          hue %= 180; 
+        }
+        // Increase by to make the rainbow "move"
+        hue = (int)(Timer.getFPGATimestamp()*80);
+        // Check bounds
+        hue %= 180; 
     }
 }
