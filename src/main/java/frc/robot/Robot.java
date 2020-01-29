@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.OCLedManager.States;
+import frc.robot.OCLedManager.Pattern;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -25,7 +25,7 @@ public class Robot extends TimedRobot {
 
   AddressableLED led = new AddressableLED(1);
   AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(120);
-  SendableChooser<States> stateChooser = new SendableChooser<>();
+  SendableChooser<Pattern> stateChooser = new SendableChooser<>();
 
   @Override
   public void robotInit() {
@@ -34,8 +34,8 @@ public class Robot extends TimedRobot {
 
     OCLedManager.setBuffer(ledBuffer);
 
-    stateChooser.setDefaultOption(States.Idle.toString(), States.Idle);
-    for(States state:OCLedManager.States.values()){
+    stateChooser.setDefaultOption(Pattern.Idle.toString(), Pattern.Idle);
+    for(Pattern state:OCLedManager.Pattern.values()){
       stateChooser.addOption(state.toString(), state);
     }
     SmartDashboard.putData(stateChooser);

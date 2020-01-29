@@ -18,7 +18,7 @@ import edu.wpi.first.wpiutil.math.MathUtil;
  */
 public class OCLedManager {
     
-    public enum States {
+    public enum Pattern {
         Idle(OCLedManager::idle),
         Shooting(OCLedManager::shooting),
         Wave(OCLedManager::wave),
@@ -28,7 +28,7 @@ public class OCLedManager {
         YellowDash(OCLedManager::yellowDash);
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
-        States(Runnable pattern){
+        Pattern(Runnable pattern){
             this.pattern = pattern;
         }
 
@@ -37,7 +37,7 @@ public class OCLedManager {
         }
     }
 
-    private static States currState = States.Idle;
+    private static Pattern currState = Pattern.Idle;
     private static AddressableLEDBuffer buffer;
 
     private static double hue = 0;
@@ -52,10 +52,10 @@ public class OCLedManager {
         buffer = buff;
     }
 
-    public static States getState(){
+    public static Pattern getPattern(){
         return currState;
     }
-    public static void setState(States state){
+    public static void setState(Pattern state){
         if(!state.equals(currState)) currState=state;
     }
 
