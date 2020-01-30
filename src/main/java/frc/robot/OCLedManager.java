@@ -22,10 +22,21 @@ public class OCLedManager {
         Idle(OCLedManager::idle),
         Shooting(OCLedManager::shooting),
         Wave(OCLedManager::wave),
-        Copypasta(OCLedManager::copypasta),
+        Copypasta(()->copypasta(255)),
         Green(OCLedManager::green),
         Red(OCLedManager::red),
-        YellowDash(OCLedManager::yellowDash);
+        YellowDash(OCLedManager::yellowDash),
+        WaveYellow(OCLedManager::waveYellow),
+        RollingBlueWave(OCLedManager::rollingBlueWave),
+        AllWhite(OCLedManager::allWhite),
+        RollBlueDark(OCLedManager::rollBlueDark),
+        RollBlue(OCLedManager::rollBlue),
+        RollBlueLight(OCLedManager::rollBlueLight),
+        RollingRedWave(OCLedManager::rollingRedWave),
+        RollRedDark(OCLedManager::rollRedDark),
+        RollRed(OCLedManager::rollRed),
+        RollRedLight(OCLedManager::rollRedLight);
+
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
         Pattern(Runnable pattern){
@@ -42,10 +53,15 @@ public class OCLedManager {
 
     private static double hue = 0;
     private static double sat = 0;
-    private static int green = 65;
-    private static int red = 2;
-    private static int blue = 108;
-    private static int yellow = 35;
+    private static final int green = 65;
+    private static final int red = 2;
+    private static final int blue = 108;
+    private static final int yellow = 25;
+    private static final int blueDark = 255;
+    private static final int satBlue = 170;
+    private static final int blueLight = 110;
+    private static final int waveLength = 30;
+    private static final int waveThresholdValue = 25;
 
 
     public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
@@ -88,13 +104,13 @@ public class OCLedManager {
         hue %= 360;
     }
 
-    private static void copypasta(){
+    private static void copypasta(int value){
         final int satRange = 213;
         final int satInitial = 42;
         for(var i=0;i<buffer.getLength();i++){
             final int currSat = (int)((sat+(i*satRange / buffer.getLength())) % satRange);
             SmartDashboard.putNumber("currSat", currSat+satInitial);
-            buffer.setHSV(i, blue, currSat+satInitial, 255);
+            buffer.setHSV(i, blue, currSat+satInitial, value);
         }
         sat = (int)(Timer.getFPGATimestamp()*80);
 
@@ -120,14 +136,119 @@ public class OCLedManager {
 
         for (var i=0;i<buffer.getLength();i++) {
             
-            if(i%2==0){
-                buffer.setHSV(i, yellow, 255, 255);
+            if(i%3==0){
+                int offset = (int)(Timer.getFPGATimestamp()*10);
+                buffer.setHSV((i+offset) % buffer.getLength(), yellow, 255, 255);
             }
         }
 
     }
     
+    private static void waveYellow(){
+        copypasta(100);
+        yellowDash();
 
+    }
+
+    private static void rollingBlueWave(){
+        //allWhite();
+        rollBlueDark();
+        rollBlue();
+        rollBlueLight();
+    }
+
+    private static void allWhite(){
+        for (var i=0;i<buffer.getLength();i++){
+            buffer.setHSV(i, 0, 0, waveThresholdValue);
+        }
+    }
+
+    private static void rollBlueDark(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength();
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value = (254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, blue, blueDark, value);
+        }
+    }
+
+    private static void rollBlue(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, blue, satBlue, value);
+        }
+    }
+
+    private static void rollBlueLight(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength()*2)/3;
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, blue, blueLight, value);
+        }
+    }
+
+    private static void rollingRedWave(){
+        allWhite();
+        rollRedDark();
+        rollRed();
+        rollRedLight();
+    }
+
+    private static void rollRedDark(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength();
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value = (254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, red, 255, value);
+        }
+    }
+
+    private static void rollRed(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, red, 170, value);
+        }
+    }
+
+    private static void rollRedLight(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength()*2)/3;
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, red, 110, value);
+        }
+    }
+
+    /**
+     * Finds the continuous error between two pixel indexes.
+     * @param a
+     * @param b
+     * @param length
+     * @return
+     */
+    private static int findDifference(int a, int b, int length){
+        return Math.abs(Math.abs(a-b+length/2)%length-length/2);
+    }
+
+
+    
 
 
 }
