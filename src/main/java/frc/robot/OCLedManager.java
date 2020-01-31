@@ -29,13 +29,7 @@ public class OCLedManager {
         WaveYellow(OCLedManager::waveYellow),
         RollingBlueWave(OCLedManager::rollingBlueWave),
         AllWhite(OCLedManager::allWhite),
-        RollBlueDark(OCLedManager::rollBlueDark),
-        RollBlue(OCLedManager::rollBlue),
-        RollBlueLight(OCLedManager::rollBlueLight),
         RollingRedWave(OCLedManager::rollingRedWave),
-        RollRedDark(OCLedManager::rollRedDark),
-        RollRed(OCLedManager::rollRed),
-        RollRedLight(OCLedManager::rollRedLight),
         RollPink(OCLedManager::pink);
 
         // etc
@@ -55,12 +49,9 @@ public class OCLedManager {
     private static double hue = 0;
     private static double sat = 0;
     private static final int green = 65;
-    private static final int red = 2;
+    private static final int red = 0;
     private static final int blue = 108;
     private static final int yellow = 25;
-    private static final int blueDark = 255;
-    private static final int satBlue = 170;
-    private static final int blueLight = 110;
     private static final int waveLength = 30;
     private static final int waveThresholdValue = 25;
 
@@ -154,9 +145,9 @@ public class OCLedManager {
 
     private static void rollingBlueWave(){
         //allWhite();
-        rollBlueDark();
-        rollBlue();
-        rollBlueLight();
+        rollBlue(0, 255);
+        rollBlue(50, 170);
+        rollBlue(100, 110);
     }
 
     private static void allWhite(){
@@ -165,77 +156,36 @@ public class OCLedManager {
         }
     }
 
-    private static void rollBlueDark(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength();
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value = (254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, blue, blueDark, value);
-        }
-    }
-
-    private static void rollBlue(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
+    private static void rollBlue(int initOffset, int sat){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3 + initOffset;
         for (var i=0;i<buffer.getLength();i++){
             int difference = findDifference(offset, i, buffer.getLength());
             difference = Math.min(difference, 255/waveLength+1);
             int value =(254-difference*waveLength)%255;
             value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, blue, satBlue, value);
-        }
-    }
-
-    private static void rollBlueLight(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength()*2)/3;
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value =(254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, blue, blueLight, value);
+            if(value>0) buffer.setHSV(i, blue, sat, value);
         }
     }
 
     private static void rollingRedWave(){
-        rollRedDark();
-        rollRed();
-        rollRedLight();
+        rollRed(0, 0);
+        rollRed(50, 2);
+        rollRed(100, 4);
     }
 
-    private static void rollRedDark(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength();
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value = (254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, red, 255, value);
-        }
-    }
 
-    private static void rollRed(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
+
+    private static void rollRed(int initOffset, int hue){
+        int offset = (int)(Timer.getFPGATimestamp()*20%buffer.getLength()+buffer.getLength()/3) + initOffset;
         for (var i=0;i<buffer.getLength();i++){
             int difference = findDifference(offset, i, buffer.getLength());
             difference = Math.min(difference, 255/waveLength+1);
             int value =(254-difference*waveLength)%255;
             value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, red, 170, value);
+            if(value>0) buffer.setHSV(i, hue, 255, value);
         }
     }
 
-    private static void rollRedLight(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength()*2)/3;
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value =(254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, red, 110, value);
-        }
-    }
 
     /**
      * Finds the continuous error between two pixel indexes.
