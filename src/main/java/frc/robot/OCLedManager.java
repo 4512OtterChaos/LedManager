@@ -35,7 +35,8 @@ public class OCLedManager {
         RollingRedWave(OCLedManager::rollingRedWave),
         RollRedDark(OCLedManager::rollRedDark),
         RollRed(OCLedManager::rollRed),
-        RollRedLight(OCLedManager::rollRedLight);
+        RollRedLight(OCLedManager::rollRedLight),
+        RollPink(OCLedManager::pink);
 
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
@@ -48,7 +49,7 @@ public class OCLedManager {
         }
     }
 
-    private static Pattern currState = Pattern.Idle;
+    private static Pattern currPattern = Pattern.Idle;
     private static AddressableLEDBuffer buffer;
 
     private static double hue = 0;
@@ -69,14 +70,15 @@ public class OCLedManager {
     }
 
     public static Pattern getPattern(){
-        return currState;
+        return currPattern;
     }
-    public static void setState(Pattern state){
-        if(!state.equals(currState)) currState=state;
+    public static void setState(Pattern pattern){
+        if(pattern == null) currPattern=Pattern.Idle;
+        else if(!pattern.equals(currPattern)) currPattern=pattern;
     }
 
     public static void periodic(){
-        if(buffer != null) currState.getPattern().run(); // this just calls the current function
+        if(buffer != null) currPattern.getPattern().run(); // this just calls the current function
     }
 
     // these functions modify the buffer to create patterns
@@ -244,6 +246,16 @@ public class OCLedManager {
      */
     private static int findDifference(int a, int b, int length){
         return Math.abs(Math.abs(a-b+length/2)%length-length/2);
+    }
+    private static void pink(){
+        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? 0:value;
+            if(value>0) buffer.setHSV(i, 157, 255, value);
+        }
     }
 
 
