@@ -7,8 +7,12 @@
 
 package frc.robot;
 
+import java.sql.Driver;
+
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Units;
 import edu.wpi.first.wpiutil.math.MathUtil;
@@ -30,7 +34,10 @@ public class OCLedManager {
         RollingBlueWave(OCLedManager::rollingBlueWave),
         AllWhite(OCLedManager::allWhite),
         RollingRedWave(OCLedManager::rollingRedWave),
-        RollPink(OCLedManager::pink);
+        RollPink(OCLedManager::pink),
+        Automatic(OCLedManager::automatic),
+        ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1));
+        
 
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
@@ -146,8 +153,8 @@ public class OCLedManager {
     private static void rollingBlueWave(){
         //allWhite();
         rollBlue(0, 255);
-        rollBlue(50, 170);
-        rollBlue(100, 110);
+        rollBlue(buffer.getLength()/3, 170);
+        rollBlue((buffer.getLength()/3)*2, 110);
     }
 
     private static void allWhite(){
@@ -169,20 +176,29 @@ public class OCLedManager {
 
     private static void rollingRedWave(){
         rollRed(0, 0);
-        rollRed(50, 2);
-        rollRed(100, 4);
+        rollRed(buffer.getLength()/3, 2);
+        rollRed((buffer.getLength()/3)*2, 4);
     }
 
 
 
     private static void rollRed(int initOffset, int hue){
-        int offset = (int)(Timer.getFPGATimestamp()*20%buffer.getLength()+buffer.getLength()/3) + initOffset;
+        int offset = (int)(Timer.getFPGATimestamp()*20%buffer.getLength() + initOffset);
         for (var i=0;i<buffer.getLength();i++){
             int difference = findDifference(offset, i, buffer.getLength());
             difference = Math.min(difference, 255/waveLength+1);
             int value =(254-difference*waveLength)%255;
             value = value < waveThresholdValue ? 0:value;
             if(value>0) buffer.setHSV(i, hue, 255, value);
+        }
+    }
+    
+    private static void automatic(){
+        if(DriverStation.getInstance().getAlliance()==Alliance.Red){
+            rollingRedWave();
+        } 
+        else{
+            rollingBlueWave();
         }
     }
 
@@ -207,8 +223,18 @@ public class OCLedManager {
             if(value>0) buffer.setHSV(i, 157, 255, value);
         }
     }
+    
+    private static void progressBar(double percentage){
+        MathUtil.clamp(percentage, 0, 1);
+        red();
+        for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
+            buffer.setHSV(i, yellow, 255, 255);
+        } 
 
 
+
+    }
+//i<buffer.get..*percentage cast to int
     
 
 
