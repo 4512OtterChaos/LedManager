@@ -197,7 +197,6 @@ public class OCLedManager {
     }
 
     private static void rollingRedWave(){
-        allWhite();
         rollRedDark();
         rollRed();
         rollRedLight();
