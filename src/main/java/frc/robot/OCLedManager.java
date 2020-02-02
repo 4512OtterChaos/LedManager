@@ -29,14 +29,14 @@ public class OCLedManager {
         Copypasta(()->copypasta(255)),
         Green(OCLedManager::green),
         Red(OCLedManager::red),
-        YellowDash(OCLedManager::yellowDash),
-        WaveYellow(OCLedManager::waveYellow),
+        ColorDash(OCLedManager::colorDash),
         RollingBlueWave(OCLedManager::rollingBlueWave),
         AllWhite(OCLedManager::allWhite),
         RollingRedWave(OCLedManager::rollingRedWave),
         RollPink(OCLedManager::pink),
         Automatic(OCLedManager::automatic),
-        ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1));
+        ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1)),
+        Pulsing(()->pulsing(blue,255,10));
         
 
         // etc
@@ -55,7 +55,8 @@ public class OCLedManager {
 
     private static double hue = 0;
     private static double sat = 0;
-    private static final int green = 65;
+    private static boolean drawingDash = false;
+    private static final int green = 60;
     private static final int red = 0;
     private static final int blue = 108;
     private static final int yellow = 25;
@@ -132,21 +133,35 @@ public class OCLedManager {
 
     }
 
-    private static void yellowDash(){
-
-        for (var i=0;i<buffer.getLength();i++) {
-            
-            if(i%3==0){
-                int offset = (int)(Timer.getFPGATimestamp()*10);
-                buffer.setHSV((i+offset) % buffer.getLength(), yellow, 255, 255);
+    private static void yellowDash(int gap, int speed, int length){
+        int currGap = gap;
+        int currLength = length;
+        int offset = (int)(Timer.getFPGATimestamp()*speed % buffer.getLength());
+        int currIndex;
+        for (var i=0;i<buffer.getLength();i++){
+            //this makes offset 
+            currIndex = (i + offset)%buffer.getLength();
+            if(!drawingDash){
+                currLength = length;
+                buffer.setHSV(currIndex, 0, 0, 0);
+                currGap--;
+                if(currGap == 0) drawingDash = true;
             }
+            else if(drawingDash) {
+                currGap=gap;
+                buffer.setHSV(currIndex, 9, 255, 255);
+                currLength--;
+                if(currLength == 0) drawingDash = false;
+            }
+
+
         }
 
     }
     
-    private static void waveYellow(){
-        copypasta(100);
-        yellowDash();
+    private static void colorDash(){
+        green();
+        yellowDash(10, 30, 5);
 
     }
 
@@ -234,7 +249,15 @@ public class OCLedManager {
 
 
     }
-//i<buffer.get..*percentage cast to int
+
+    
+    private static void pulsing(int hue, int saturation, int speed){
+        int value = (int)(((Math.sin(Timer.getFPGATimestamp()*speed))+1)*(255/2.0));
+        for (var i=0;i<buffer.getLength();i++){
+          buffer.setHSV(i, hue, saturation, value);
+        }
+        
+    }
     
 
 
