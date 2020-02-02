@@ -36,6 +36,7 @@ public class OCLedManager {
         RollingRedWave(OCLedManager::rollingRedWave),
         RollPink(OCLedManager::pink),
         Automatic(OCLedManager::automatic),
+        Seahawks(OCLedManager::seaHawks),
         ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1));
         
 
@@ -202,6 +203,14 @@ public class OCLedManager {
         }
     }
 
+    private static void seaHawks() {
+        for (int i = 0; i < buffer.getLength(); i+= 2){
+            buffer.setHSV(i, 210/2, 225, 61);
+            buffer.setHSV(i + 1, 94/2, 178, 169);
+        }
+
+    }
+
 
     /**
      * Finds the continuous error between two pixel indexes.
@@ -228,12 +237,11 @@ public class OCLedManager {
         MathUtil.clamp(percentage, 0, 1);
         red();
         for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
-            buffer.setHSV(i, yellow, 255, 255);
+            
         } 
-
-
-
     }
+
+    
 //i<buffer.get..*percentage cast to int
     
 
