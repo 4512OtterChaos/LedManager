@@ -27,8 +27,8 @@ public class OCLedManager {
         Shooting(OCLedManager::shooting),
         Wave(OCLedManager::wave),
         Copypasta(()->copypasta(255)),
-        Green(OCLedManager::green),
-        Red(OCLedManager::red),
+        Green(()->green(green)),
+        Red(()->red(red)),
         ColorDash(OCLedManager::colorDash),
         RollingBlueWave(OCLedManager::rollingBlueWave),
         AllWhite(OCLedManager::allWhite),
@@ -37,7 +37,9 @@ public class OCLedManager {
         Automatic(OCLedManager::automatic),
         ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1)),
         Pulsing(()->pulsing(blue,255,10)),
-        Seahawks(OCLedManager::seaHawks);
+        Seahawks(OCLedManager::seaHawks),
+        RedPulsing(()->redPulsing(red,255,10));
+        
         
 
         // etc
@@ -60,7 +62,6 @@ public class OCLedManager {
     private static final int green = 60;
     private static final int red = 0;
     private static final int blue = 108;
-    private static final int yellow = 25;
     private static final int waveLength = 30;
     private static final int waveThresholdValue = 25;
 
@@ -119,17 +120,17 @@ public class OCLedManager {
         sat %= 255;
         SmartDashboard.putNumber("sat", sat);
     }
-    private static void green(){
+    private static void green(int hue){
         for (var i = 0; i < buffer.getLength(); i++) {
 
-            buffer.setHSV(i, green, 255, 255);
+            buffer.setHSV(i, hue, 255, 255);
         } 
 
     }
-    private static void red(){
+    private static void red(int hue){
         for (var i = 0; i < buffer.getLength(); i++) {
 
-            buffer.setHSV(i, red, 255, 255);
+            buffer.setHSV(i, hue, 255, 255);
         } 
 
     }
@@ -161,7 +162,7 @@ public class OCLedManager {
     }
     
     private static void colorDash(){
-        green();
+        green(green);
         yellowDash(10, 30, 5);
 
     }
@@ -191,7 +192,7 @@ public class OCLedManager {
     }
 
     private static void rollingRedWave(){
-        rollRed(0, 0);
+        rollRed(0, red);
         rollRed(buffer.getLength()/3, 2);
         rollRed((buffer.getLength()/3)*2, 4);
     }
@@ -250,7 +251,7 @@ public class OCLedManager {
     
     private static void progressBar(double percentage){
         MathUtil.clamp(percentage, 0, 1);
-        red();
+        red(red);
         for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
             
         } 
@@ -263,7 +264,12 @@ public class OCLedManager {
         }
         
     }
-    
-
+    private static void redPulsing(int hue, int saturation, int speed){
+        int value = (int)(((Math.sin(Timer.getFPGATimestamp()*speed))+1)*(255/2.0));
+        for (var i=0;i<buffer.getLength();i++){
+          buffer.setHSV(i, hue, saturation, value);
+        }
+        
+    }
 
 }
