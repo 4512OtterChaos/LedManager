@@ -36,9 +36,10 @@ public class OCLedManager {
         RollPink(OCLedManager::pink),
         Automatic(OCLedManager::automatic),
         ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1)),
-        Pulsing(()->pulsing(blue,255,10)),
+        Pulsing(()->pulsing(blue,255,100)),
         Seahawks(OCLedManager::seaHawks),
-        RedPulsing(()->redPulsing(red,255,10));
+        Simp(OCLedManager::simp), //die this
+        RedPulsing(()->redPulsing(red,255,50));
         
         
 
@@ -62,6 +63,7 @@ public class OCLedManager {
     private static final int green = 60;
     private static final int red = 0;
     private static final int blue = 108;
+    private static final int yellow = 30;
     private static final int waveLength = 30;
     private static final int waveThresholdValue = 25;
 
@@ -169,6 +171,7 @@ public class OCLedManager {
 
     private static void rollingBlueWave(){
         //allWhite();
+        allWhite();
         rollBlue(0, 255);
         rollBlue(buffer.getLength()/3, 170);
         rollBlue((buffer.getLength()/3)*2, 110);
@@ -192,6 +195,7 @@ public class OCLedManager {
     }
 
     private static void rollingRedWave(){
+        allWhite();
         rollRed(0, red);
         rollRed(buffer.getLength()/3, 2);
         rollRed((buffer.getLength()/3)*2, 4);
@@ -221,12 +225,23 @@ public class OCLedManager {
 
     private static void seaHawks() {
         for (int i = 0; i < buffer.getLength(); i+= 2){
-            buffer.setHSV(i, 210/2, 225, 61);
-            buffer.setHSV(i + 1, 94/2, 178, 169);
+            buffer.setHSV(i, 105, 225, 61);
+            buffer.setHSV(i + 1, 47, 178, 169);
         }
 
     }
 
+    private static void simp() { //die this method
+        for (int i = 0; i < buffer.getLength(); i++){
+            var cringe = (int)(10*Math.random());
+            if(i%(cringe+1)==0 || i%4==0){
+                buffer.setHSV(i, 69, 255, 255);
+            } else {
+                buffer.setHSV(i, 274/2, 255, 255);
+            }
+        }
+
+    }
 
     /**
      * Finds the continuous error between two pixel indexes.
@@ -253,7 +268,7 @@ public class OCLedManager {
         MathUtil.clamp(percentage, 0, 1);
         red(red);
         for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
-            
+            buffer.setHSV(i, yellow, 255, 255);
         } 
     }
     
