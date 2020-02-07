@@ -27,6 +27,10 @@ public class Robot extends TimedRobot {
   AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(120);
   SendableChooser<Pattern> stateChooser = new SendableChooser<>();
 
+  public Robot(){
+    super(0.04); // Smooth <= 0.03, gets slightly more chunky past that(test with progress bar)
+  }
+
   @Override
   public void robotInit() {
     led.setLength(ledBuffer.getLength());
