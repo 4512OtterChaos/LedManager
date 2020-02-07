@@ -37,6 +37,7 @@ public class OCLedManager {
         ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1)),
         Pulsing(()->pulsing(blue,255,100)),
         Seahawks(OCLedManager::seaHawks),
+        Matrix(OCLedManager::matrix),
         Simp(OCLedManager::simp), //die this
         RedPulsing(()->redPulsing(red,255,50));
         
@@ -62,7 +63,7 @@ public class OCLedManager {
     private static final int green = 60;
     private static final int red = 0;
     private static final int blue = 108;
-    private static final int yellow = 30;
+    //private static final int yellow = 30;
     private static final int waveLength = 30;
     private static final int waveThresholdValue = 25;
 
@@ -156,10 +157,7 @@ public class OCLedManager {
                 currLength--;
                 if(currLength == 0) drawingDash = false;
             }
-
-
         }
-
     }
     
     private static void colorDash(){
@@ -199,8 +197,6 @@ public class OCLedManager {
         rollRed(buffer.getLength()/3, 2);
         rollRed((buffer.getLength()/3)*2, 4);
     }
-
-
 
     private static void rollRed(int initOffset, int hue){
         int offset = (int)(Timer.getFPGATimestamp()*20%buffer.getLength() + initOffset);
@@ -267,7 +263,7 @@ public class OCLedManager {
         MathUtil.clamp(percentage, 0, 1);
         red(red);
         for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
-            buffer.setHSV(i, yellow, 255, 255);
+            buffer.setHSV(i, 30-(int)(i/3.5), 255, 255);
         } 
     }
     
@@ -285,5 +281,12 @@ public class OCLedManager {
         }
         
     }
-        
+
+    private static void matrix(){
+        int offset = (int)(Timer.getFPGATimestamp()*20);
+        for(var i = 0;i < buffer.getLength();i++){
+            buffer.setHSV((i+offset)%buffer.getLength(), 1+(int)(i * Math.pow(Math.sin(1.2*i), 1.8)), 255, 255);
+        }
+    }
+
 }
