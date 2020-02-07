@@ -34,7 +34,7 @@ public class Robot extends TimedRobot {
 
     OCLedManager.setBuffer(ledBuffer);
 
-    stateChooser.setDefaultOption(Pattern.Idle.toString(), Pattern.Idle);
+    stateChooser.setDefaultOption(Pattern.Slideshow.toString(), Pattern.Slideshow);
     for(Pattern state:OCLedManager.Pattern.values()){
       stateChooser.addOption(state.toString(), state);
     }

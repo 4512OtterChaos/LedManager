@@ -22,27 +22,21 @@ import edu.wpi.first.wpiutil.math.MathUtil;
 public class OCLedManager {
     
     public enum Pattern {
-        Idle(OCLedManager::idle),
-        Shooting(OCLedManager::shooting),
+        Slideshow(OCLedManager::slideshow),
         Wave(OCLedManager::wave),
         Copypasta(()->copypasta(255)),
-        Green(()->green(green)),
-        Red(()->red(red)),
-        ColorDash(OCLedManager::colorDash),
+        Green(()->solid(green, 255, 200)),
+        Red(()->solid(red, 255, 200)),
+        YellowDash(()->dashes(9,10,30,5)),
         RollingBlueWave(OCLedManager::rollingBlueWave),
-        AllWhite(OCLedManager::allWhite),
         RollingRedWave(OCLedManager::rollingRedWave),
-        RollPink(OCLedManager::pink),
-        Automatic(OCLedManager::automatic),
-        ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.5)%1)),
-        Pulsing(()->pulsing(blue,255,100)),
+        RollPink(()->hotspot(0, 20, 157, 255)),
+        IdleWave(OCLedManager::idleWave),
+        ProgressBar(()->progressBar((Timer.getFPGATimestamp()*0.3)%1)),
+        BluePulsing(()->pulsing(blue, 255, 20)),
+        RedPulsing(()->pulsing(red, 255, 20)),
         Seahawks(OCLedManager::seaHawks),
-        Matrix(OCLedManager::matrix),
-        Simp(OCLedManager::simp), //die this
-        RedPulsing(()->redPulsing(red,255,50));
-        
-        
-
+        Matrix(OCLedManager::matrix);
         // etc
         private Runnable pattern;// This just points to the function that creates a certain effect
         Pattern(Runnable pattern){
@@ -54,18 +48,22 @@ public class OCLedManager {
         }
     }
 
-    private static Pattern currPattern = Pattern.Idle;
+    private static Pattern currPattern = Pattern.Slideshow;
     private static AddressableLEDBuffer buffer;
 
-    private static double hue = 0;
-    private static double sat = 0;
+    // Persistent variables to change over time
+    private static double workingHue = 0;
+    private static double workingSat = 0;
     private static boolean drawingDash = false;
+
+    // Constants affecting appearance
     private static final int green = 60;
     private static final int red = 0;
     private static final int blue = 108;
-    //private static final int yellow = 30;
-    private static final int waveLength = 30;
-    private static final int waveThresholdValue = 25;
+    private static final int yellow = 30;
+
+    private static final int waveLength = 30; // size of waves
+    private static final int waveThresholdValue = 25; // minimum wave brightness
 
 
     public static void setBuffer(AddressableLEDBuffer buff){ // The class requires a buffer to change
@@ -76,68 +74,99 @@ public class OCLedManager {
         return currPattern;
     }
     public static void setState(Pattern pattern){
-        if(pattern == null) currPattern=Pattern.Idle;
+        if(pattern == null) currPattern=Pattern.Slideshow;
         else if(!pattern.equals(currPattern)) currPattern=pattern;
     }
 
     public static void periodic(){
-        if(buffer != null) currPattern.getPattern().run(); // this just calls the current function
+        if(buffer != null) currPattern.getPattern().run(); // this just calls the relevant function
     }
 
-    // these functions modify the buffer to create patterns
-    private static void idle(){
+    //----Helper methods
+    /**
+     * Finds the continuous error between two pixel indexes.
+     * @param a
+     * @param b
+     * @param length
+     * @return
+     */
+    private static int findDifference(int a, int b, int length){
+        return Math.abs(Math.abs(a-b+length/2)%length-length/2);
+    }
+
+    /**
+     * Sets all pixels to parameters
+     * @param hue
+     * @param sat
+     * @param val
+     */
+    private static void solid(int hue, int sat, int val){
         for(int i=0;i<buffer.getLength();i++){
-            buffer.setHSV(i, 8, 200, 150);
+            buffer.setHSV(i, hue, sat, val);
         }
     }
-    private static void shooting(){
-        for(int i=0;i<buffer.getLength();i++){
-            buffer.setHSV(i, 100, 200, 150);
+
+    /**
+     * Creates a moving hotspot that scrolls along the strip.
+     * @param initOffset Starting pixel
+     * @param speed Rate of scroll
+     * @param hue
+     * @param sat
+     */
+    private static void hotspot(int initOffset, int speed, int hue, int sat){
+        int offset = (int)(Timer.getFPGATimestamp()*speed%buffer.getLength() + initOffset);
+        for (var i=0;i<buffer.getLength();i++){
+            int difference = findDifference(offset, i, buffer.getLength());
+            difference = Math.min(difference, 255/waveLength+1);
+            int value =(254-difference*waveLength)%255;
+            value = value < waveThresholdValue ? waveThresholdValue:value;
+            if(value>waveThresholdValue) buffer.setHSV(i, hue, 255, value);
         }
     }
+    //----
+
+    // vvv These functions modify the buffer to create patterns vvv
+
+    private static void slideshow(){// cycle through all patterns every 5 seconds
+        int patternIndex = (int)((Timer.getFPGATimestamp()/5)%(Pattern.values().length-1));
+        Pattern.values()[patternIndex+1].getPattern().run();
+    }
+
     private static void wave(){
         final int hueRange = 100;
         final int hueInitial = 80;
         for(var i=0;i<buffer.getLength();i++){
-            //final var currHue = ((int)hue + (i*hueRange / buffer.getLength())) % hueRange; 
-            final int currrHue = (int)(((Math.sin(hue/180*Math.PI)+1) * (hueRange/2.0) + (i*hueRange/buffer.getLength())) % hueRange);
-            SmartDashboard.putNumber("hue", currrHue+hueInitial);
+            int currrHue = (int)(((Math.sin(workingHue/180*Math.PI)+1) * (hueRange/2.0) + (i*hueRange/buffer.getLength())) % hueRange);
+            SmartDashboard.putNumber("Hue", currrHue+hueInitial);
             buffer.setHSV(i, currrHue+hueInitial, 255, 100);
         }
-        hue = (int)(Timer.getFPGATimestamp()*80);
+        workingHue = (int)(Timer.getFPGATimestamp()*80);
 
-        hue %= 360;
+        workingHue %= 360;
     }
 
     private static void copypasta(int value){
         final int satRange = 213;
         final int satInitial = 42;
         for(var i=0;i<buffer.getLength();i++){
-            final int currSat = (int)((sat+(i*satRange / buffer.getLength())) % satRange);
-            SmartDashboard.putNumber("currSat", currSat+satInitial);
-            buffer.setHSV(i, blue, currSat+satInitial, value);
+            int currSat = (int)((workingSat+(i*satRange / buffer.getLength())) % satRange);
+            currSat+=satInitial;
+            buffer.setHSV(i, blue, currSat, value);
         }
-        sat = (int)(Timer.getFPGATimestamp()*80);
+        workingSat = (int)(Timer.getFPGATimestamp()*80);
 
-        sat %= 255;
-        SmartDashboard.putNumber("sat", sat);
-    }
-    private static void green(int hue){
-        for (var i = 0; i < buffer.getLength(); i++) {
-
-            buffer.setHSV(i, hue, 255, 255);
-        } 
-
-    }
-    private static void red(int hue){
-        for (var i = 0; i < buffer.getLength(); i++) {
-
-            buffer.setHSV(i, hue, 255, 255);
-        } 
-
+        workingSat %= 255;
+        SmartDashboard.putNumber("workingSat", workingSat);
     }
 
-    private static void yellowDash(int gap, int speed, int length){
+    /**
+     * Draws a moving dashed line.
+     * @param hue 
+     * @param gap Pixels between dashes
+     * @param speed 
+     * @param length Pixel length of dashes
+     */
+    private static void dashes(int hue, int gap, int speed, int length){
         int currGap = gap;
         int currLength = length;
         int offset = (int)(Timer.getFPGATimestamp()*speed % buffer.getLength());
@@ -153,49 +182,40 @@ public class OCLedManager {
             }
             else if(drawingDash) {
                 currGap=gap;
-                buffer.setHSV(currIndex, 9, 255, 255);
+                buffer.setHSV(currIndex, hue, 255, 255);
                 currLength--;
                 if(currLength == 0) drawingDash = false;
             }
         }
     }
-    
-    private static void colorDash(){
-        green(green);
-        yellowDash(10, 30, 5);
 
-    }
+
 
     private static void rollingBlueWave(){
-        //allWhite();
-        allWhite();
+        /*
+        solid(0,0,25);
         rollBlue(0, 255);
         rollBlue(buffer.getLength()/3, 170);
         rollBlue((buffer.getLength()/3)*2, 110);
-    }
+        */
 
-    private static void allWhite(){
-        for (var i=0;i<buffer.getLength();i++){
-            buffer.setHSV(i, 0, 0, waveThresholdValue);
-        }
-    }
-
-    private static void rollBlue(int initOffset, int sat){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3 + initOffset;
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value =(254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, blue, sat, value);
-        }
+        solid(0, 0, waveThresholdValue);
+        hotspot(0, 20, blue, 255);
+        hotspot(buffer.getLength()/3, 20, blue, 220);
+        hotspot((buffer.getLength()/3)*2, 20, blue, 190);
     }
 
     private static void rollingRedWave(){
-        allWhite();
+        /*
         rollRed(0, red);
         rollRed(buffer.getLength()/3, 2);
         rollRed((buffer.getLength()/3)*2, 4);
+        */
+
+        solid(red, 255, waveThresholdValue);
+        hotspot(0, 20, red, 255);
+        hotspot(buffer.getLength()/3, 20, red+2, 255);
+        hotspot((buffer.getLength()/3)*2, 20, red+4, 255);
     }
 
     private static void rollRed(int initOffset, int hue){
@@ -209,7 +229,7 @@ public class OCLedManager {
         }
     }
     
-    private static void automatic(){
+    private static void idleWave(){
         if(DriverStation.getInstance().getAlliance()==Alliance.Red){
             rollingRedWave();
         } 
@@ -225,56 +245,16 @@ public class OCLedManager {
         }
 
     }
-
-    private static void simp() { //die this method
-        for (int i = 0; i < buffer.getLength(); i++){
-            var cringe = (int)(10*Math.random());
-            if(i%(cringe+1)==0 || i%4==0){
-                buffer.setHSV(i, 69, 255, 255);
-            } else {
-                buffer.setHSV(i, 274/2, 255, 255);
-            }
-        }
-
-    }
-
-    /**
-     * Finds the continuous error between two pixel indexes.
-     * @param a
-     * @param b
-     * @param length
-     * @return
-     */
-    private static int findDifference(int a, int b, int length){
-        return Math.abs(Math.abs(a-b+length/2)%length-length/2);
-    }
-    private static void pink(){
-        int offset = (int)(Timer.getFPGATimestamp()*20)%buffer.getLength()+(buffer.getLength())/3;
-        for (var i=0;i<buffer.getLength();i++){
-            int difference = findDifference(offset, i, buffer.getLength());
-            difference = Math.min(difference, 255/waveLength+1);
-            int value =(254-difference*waveLength)%255;
-            value = value < waveThresholdValue ? 0:value;
-            if(value>0) buffer.setHSV(i, 157, 255, value);
-        }
-    }
     
     private static void progressBar(double percentage){
         MathUtil.clamp(percentage, 0, 1);
-        red(red);
+        solid(0,0,0);
         for (var i = 0; i < (int)(buffer.getLength()*percentage); i++) {
             buffer.setHSV(i, 30-(int)(i/3.5), 255, 255);
         } 
     }
     
     private static void pulsing(int hue, int saturation, int speed){
-        int value = (int)(((Math.sin(Timer.getFPGATimestamp()*speed))+1)*(255/2.0));
-        for (var i=0;i<buffer.getLength();i++){
-          buffer.setHSV(i, hue, saturation, value);
-        }
-        
-    }
-    private static void redPulsing(int hue, int saturation, int speed){
         int value = (int)(((Math.sin(Timer.getFPGATimestamp()*speed))+1)*(255/2.0));
         for (var i=0;i<buffer.getLength();i++){
           buffer.setHSV(i, hue, saturation, value);
@@ -288,5 +268,4 @@ public class OCLedManager {
             buffer.setHSV((i+offset)%buffer.getLength(), 1+(int)(i * Math.pow(Math.sin(1.2*i), 1.8)), 255, 255);
         }
     }
-
 }
