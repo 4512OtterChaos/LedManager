@@ -57,6 +57,8 @@ public class OCLedManager {
     private static double workingSat = 0;
     private static double workingVal = 0;
     private static boolean drawingDash = false;
+    private static boolean hasBumperLighting = true;
+    private static int effectiveLength = 0;
     private static double lastTime = Timer.getFPGATimestamp();
 
     // Constants affecting appearance
@@ -72,6 +74,8 @@ public class OCLedManager {
         buffer = buff;
     }
 
+    
+
     public static Pattern getPattern() {
         return currPattern;
     }
@@ -82,10 +86,26 @@ public class OCLedManager {
         else if (!pattern.equals(currPattern))
             currPattern = pattern;
     }
+    public static void setEffectiveLength(int length){
+        effectiveLength = length;
+    }
+
+    public static void setHasBumperLighting(boolean hasLighting){
+        hasBumperLighting=hasLighting;
+    }
 
     public static void periodic() {
         if (buffer != null)
             currPattern.getPattern().run(); // this just calls the relevant function
+    }
+    public static void setHSV(int i, int hue, int sat, int value) {
+        buffer.setHSV(i, hue, sat, value);
+        buffer.setHSV(effectiveLength*2-1-i, hue, sat, value);
+        for(int j=effectiveLength*2;j<buffer.getLength();j++){
+            boolean isRed = DriverStation.getInstance().getAlliance()==Alliance.Red;
+            if(isRed) buffer.setHSV(j, red, 255, 200);
+            else buffer.setHSV(j, blue, 255, 200);
+        }
     }
 
     // ----Helper methods
@@ -109,8 +129,8 @@ public class OCLedManager {
      * Sets all pixels to parameters
      */
     private static void solid(final int hue, final int sat, final int val) {
-        for (int i = 0; i < buffer.getLength(); i++) {
-            buffer.setHSV(i, hue, sat, val);
+        for (int i = 0; i < effectiveLength; i++) {
+            setHSV(i, hue, sat, val);
         }
     }
 
@@ -120,8 +140,8 @@ public class OCLedManager {
     private static void progressBar(final int hue, final double percentage) {
         MathUtil.clamp(percentage, 0, 1);
         solid(0, 0, 0);
-        for (var i = 0; i < (int) (buffer.getLength() * percentage); i++) {
-            buffer.setHSV(i, hue, 255, 255);
+        for (var i = 0; i < (int) (effectiveLength * percentage); i++) {
+            setHSV(i, hue, 255, 255);
         }
     }
 
@@ -130,8 +150,8 @@ public class OCLedManager {
      */
     private static void pulsing(final int hue, final int saturation, final int speed) {
         final int value = (int) (((Math.sin(Timer.getFPGATimestamp() * speed)) + 1) * (255 / 2.0));
-        for (var i = 0; i < buffer.getLength(); i++) {
-            buffer.setHSV(i, hue, saturation, value);
+        for (var i = 0; i < effectiveLength; i++) {
+            setHSV(i, hue, saturation, value);
         }
 
     }
@@ -145,20 +165,20 @@ public class OCLedManager {
     private static void dashes(final int hue, final int gap, final int speed, final int length) {
         int currGap = gap;
         int currLength = length;
-        final int offset = (int) (Timer.getFPGATimestamp() * speed % buffer.getLength());
+        final int offset = (int) (Timer.getFPGATimestamp() * speed % effectiveLength);
         int currIndex;
-        for (var i = 0; i < buffer.getLength(); i++) {
+        for (var i = 0; i < effectiveLength; i++) {
             // this makes offset
-            currIndex = (i + offset) % buffer.getLength();
+            currIndex = (i + offset) % effectiveLength;
             if (!drawingDash) {
                 currLength = length;
-                buffer.setHSV(currIndex, 0, 0, 0);
+                setHSV(currIndex, 0, 0, 0);
                 currGap--;
                 if (currGap == 0)
                     drawingDash = true;
             } else if (drawingDash) {
                 currGap = gap;
-                buffer.setHSV(currIndex, hue, 255, 255);
+                setHSV(currIndex, hue, 255, 255);
                 currLength--;
                 if (currLength == 0)
                     drawingDash = false;
@@ -172,13 +192,13 @@ public class OCLedManager {
      * @param initOffset Starting pixel
      */
     private static void hotspot(final int initOffset, final int speed, final int hue, final int sat) {
-        final int offset = (int) (Timer.getFPGATimestamp() * speed % buffer.getLength() + initOffset);
-        for (var i = 0; i < buffer.getLength(); i++) {
-            final int difference = findDifference(offset, i, buffer.getLength());
+        final int offset = (int) (Timer.getFPGATimestamp() * speed % effectiveLength + initOffset);
+        for (var i = 0; i < effectiveLength; i++) {
+            final int difference = findDifference(offset, i, effectiveLength);
             int value = (int) (255 - difference * (2 * (255 - waveThresholdValue) / (waveLength)));
             value = Math.max(waveThresholdValue, value);
             if (value > waveThresholdValue)
-                buffer.setHSV(i, hue, sat, value);
+                setHSV(i, hue, sat, value);
         }
     }
     // -----
@@ -192,15 +212,15 @@ public class OCLedManager {
     private static void rollingBlueWave() {
         solid(blue, 255, waveThresholdValue);
         hotspot(0, 20, blue, 255);
-        hotspot(buffer.getLength() / 3, 20, blue, 220);
-        hotspot((buffer.getLength() / 3) * 2, 20, blue, 190);
+        hotspot(effectiveLength / 3, 20, blue, 220);
+        hotspot((effectiveLength / 3) * 2, 20, blue, 190);
     }
 
     private static void rollingRedWave() {
         solid(red, 255, waveThresholdValue);
         hotspot(0, 20, red, 255);
-        hotspot(buffer.getLength() / 3, 20, red + 2, 255);
-        hotspot((buffer.getLength() / 3) * 2, 20, red + 4, 255);
+        hotspot(effectiveLength / 3, 20, red + 2, 255);
+        hotspot((effectiveLength / 3) * 2, 20, red + 4, 255);
     }
 
     private static void automaticWave() {
@@ -212,18 +232,18 @@ public class OCLedManager {
     }
 
     private static void tide(final int hue, final int satMin) {
-        for (int i = 0; i < buffer.getLength(); i++) {
-            final int currSat = (int) (workingSat + (i * (255 - satMin) / buffer.getLength())) % 256;
-            buffer.setHSV(i, hue, currSat + satMin, 255);
+        for (int i = 0; i < effectiveLength; i++) {
+            final int currSat = (int) (workingSat + (i * (255 - satMin) / effectiveLength)) % 256;
+            setHSV(i, hue, currSat + satMin, 255);
         }
         workingSat = (int) (Timer.getFPGATimestamp() * 80) % 256;
     }
 
     private static void rockingWave(final int hueRange, final int hueInitial) {
-        for (var i = 0; i < buffer.getLength(); i++) {
+        for (var i = 0; i < effectiveLength; i++) {
             final int currHue = (int) (((Math.sin(workingHue / 180 * Math.PI) + 1) * (hueRange / 2.0)
-                    + (i * hueRange / buffer.getLength())) % hueRange);
-            buffer.setHSV(i, currHue + hueInitial, 255, 255);
+                    + (i * hueRange / effectiveLength)) % hueRange);
+            setHSV(i, currHue + hueInitial, 255, 255);
         }
         workingHue = (int) (Timer.getFPGATimestamp() * 80);
 
@@ -231,32 +251,28 @@ public class OCLedManager {
     }
 
     private static void seaHawks() {
-        for (int i = 0; i < buffer.getLength(); i += 2) {
-            buffer.setHSV(i, 105, 225, 61);
-            buffer.setHSV(i + 1, 47, 178, 169);
+        for (int i = 0; i < effectiveLength; i += 2) {
+            setHSV(i, 105, 225, 61);
+            setHSV(i + 1, 47, 178, 169);
         }
 
     }
 
     private static void matrix() {
         final int offset = (int) (Timer.getFPGATimestamp() * 20);
-        for(var i = 0;i < buffer.getLength();i++){
-            buffer.setHSV((i+offset)%buffer.getLength(), 1+(int)(i * Math.pow(Math.sin(1.2*i), 1.8)), 255, 255);
+        for(var i = 0;i < effectiveLength;i++){
+            setHSV((i+offset)%effectiveLength, 1+(int)(i * Math.pow(Math.sin(1.2*i), 1.8)), 255, 255);
         }
     }
    private static void random(){
     int length = 5;
     double interval = 0.05;
-    /*
-    for(int i=0;i<buffer.getLength();i++){
-        buffer.setHSV(i,(int)(Math.random()*180), 255, 255);
-    }*/
 
     if(Timer.getFPGATimestamp()>lastTime+interval){
-        for(int i=0;i<buffer.getLength()/length;i++){
+        for(int i=0;i<effectiveLength/length;i++){
             int hue = (int)(Math.random()*180);
             for(int j=0;j<length;j++){
-                buffer.setHSV(i*length+j, hue, 255, 255);
+                setHSV(i*length+j, hue, 255, 255);
             }
         }
         lastTime=Timer.getFPGATimestamp();
@@ -268,10 +284,10 @@ public class OCLedManager {
     double interval = 0.05;
 
     if(Timer.getFPGATimestamp()>lastTime+interval){
-        for(int i=0;i<buffer.getLength()/length;i++){
+        for(int i=0;i<effectiveLength/length;i++){
             int hue = 74;
             for(int j=0;j<length;j++){
-                buffer.setHSV(i, hue, 255, 255);
+                setHSV(i, hue, 255, 255);
 
             }
         }
