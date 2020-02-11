@@ -9,6 +9,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -25,7 +26,9 @@ public class Robot extends TimedRobot {
 
   AddressableLED led = new AddressableLED(1);
   AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(120);
-  SendableChooser<Pattern> stateChooser = new SendableChooser<>();
+  SendableChooser<Pattern> patternChooser = new SendableChooser<>();
+
+  DigitalInput test = new DigitalInput(0);
 
   public Robot(){
     super(0.04); // Smooth <= 0.03, gets slightly more chunky past that(test with progress bar)
@@ -37,19 +40,21 @@ public class Robot extends TimedRobot {
     led.start();
 
     OCLedManager.setBuffer(ledBuffer);
+    OCLedManager.setEffectiveLength(45);
 
-    stateChooser.setDefaultOption(Pattern.Slideshow.toString(), Pattern.Slideshow);
+    patternChooser.setDefaultOption(Pattern.Slideshow.toString(), Pattern.Slideshow);
     for(Pattern state:OCLedManager.Pattern.values()){
-      stateChooser.addOption(state.toString(), state);
+      patternChooser.addOption(state.toString(), state);
     }
-    SmartDashboard.putData(stateChooser);
+    SmartDashboard.putData(patternChooser);
   }
 
   @Override
   public void robotPeriodic() {
-    OCLedManager.setState(stateChooser.getSelected());
+    OCLedManager.setPattern(patternChooser.getSelected());
     OCLedManager.periodic();
     led.setData(ledBuffer);
+    SmartDashboard.putBoolean("Beam", test.get());
   }
 
   @Override
