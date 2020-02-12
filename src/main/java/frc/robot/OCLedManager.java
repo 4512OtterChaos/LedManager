@@ -36,7 +36,8 @@ public class OCLedManager {
         RockingWave(()->rockingWave(180, 0)),
         Random(OCLedManager::random),
         Hmmm(()->pulsing(60, 255, 10)),
-        Hmmv2(OCLedManager::doot);
+        Hmmv2(OCLedManager::doot),
+        Flashing(()->flashing(blue, 255, 200, 10));
         // etc
         private final Runnable pattern;// This just points to the function that creates a certain effect
 
@@ -293,5 +294,17 @@ public class OCLedManager {
         }
         lastTime=Timer.getFPGATimestamp();    
     }
+  }
+  private static void flashing(int hue, int sat, int value, int speed){
+      int time = (int)(Timer.getFPGATimestamp()*speed);
+      for(int i=0;i<effectiveLength;i++){
+          if(time%2==0){
+              setHSV(i, hue, sat, value);
+          }
+          else{
+              setHSV(i, 0, 0, 0);
+          }
+      }
+    
   }
 }
